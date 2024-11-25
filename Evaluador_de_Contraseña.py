@@ -1,51 +1,57 @@
-import re
 import streamlit as st
+import re
 
-def evaluar_contraseña(contraseña):
+def evaluar_contrasena(contrasena):
     """Evalúa la fortaleza de una contraseña y proporciona sugerencias.
 
     Args:
-        contraseña (str): La contraseña a evaluar.
+        contrasena (str): La contraseña a evaluar.
 
     Returns:
-        bool: True si la contraseña es fuerte, False si no lo es.
+        dict: Un diccionario con los criterios evaluados (True/False).
     """
 
-    # Patrones para validar los requisitos de la contraseña
-    patron_mayusculas = re.compile(r'[A-Z]')
-    patron_minusculas = re.compile(r'[a-z]')
-    patron_numeros = re.compile(r'\d')
-    patron_especiales = re.compile(r'[^\w\s]')
+    # Patrones para cada criterio
+    tiene_mayusculas = re.search(r"[A-Z]", contrasena)
+    tiene_minusculas = re.search(r"[a-z]", contrasena)
+    tiene_numeros = re.search(r"\d", contrasena)
+    tiene_especiales = re.search(r"[^\w\s]", contrasena)
+    longitud_suficiente = len(contrasena) >= 8
 
-    # Validar la longitud y los caracteres requeridos
-    es_fuerte = (
-        len(contraseña) >= 8 and
-        patron_mayusculas.search(contraseña) and
-        patron_minusculas.search(contraseña) and
-        patron_numeros.search(contraseña) and
-        patron_especiales.search(contraseña)
-    )
+    # Crear diccionario con resultados
+    resultados = {
+        "Mayúsculas": tiene_mayusculas,
+        "Minúsculas": tiene_minusculas,
+        "Números": tiene_numeros,
+        "Caracteres especiales": tiene_especiales,
+        "Longitud suficiente": longitud_suficiente
+    }
+    return resultados
 
-    return es_fuerte
+def mostrar_resultados(resultados):
+    """Muestra los resultados de la evaluación en una interfaz amigable."""
 
-# Interfaz de usuario con Streamlit
+    for criterio, cumple in resultados.items():
+        if cumple:
+            st.success(f"✅ Cumple con el criterio: {criterio}")
+        else:
+            st.error(f"❌ No cumple con el criterio: {criterio}")
+
 st.title("Evaluador de Contraseñas")
 
-contraseña = st.text_input("Ingrese su contraseña:")
+# Input de contraseña (oculto)
+with st.form("my_form"):
+    contrasena = st.text_input("Ingrese su contraseña", type="password")
+    submitted = st.form_submit_button("Evaluar")
 
-if contraseña:
-    es_fuerte = evaluar_contraseña(contraseña)
-    if es_fuerte:
-        st.success("¡La contraseña es fuerte!")
-    else:
-        st.error("La contraseña no es lo suficientemente fuerte.")
-        if not re.search(r'[A-Z]', contraseña):
-            st.warning("La contraseña debe contener al menos una mayúscula.")
-        if not re.search(r'[a-z]', contraseña):
-            st.warning("La contraseña debe contener al menos una minúscula.")
-        if not re.search(r'\d', contraseña):
-            st.warning("La contraseña debe contener al menos un número.")
-        if not re.search(r'[^\w\s]', contraseña):
-            st.warning("La contraseña debe contener al menos un caracter especial.")
+# Mostrar resultados si se ha enviado el formulario
+if submitted:
+    resultados = evaluar_contrasena(contrasena)
+    mostrar_resultados(resultados)
+
+# Mostrar botón para mostrar/ocultar la contraseña
+if contrasena:
+    if st.button("Mostrar Contraseña"):
+        st.text(contrasena)
 
 st.write("Programado por Kevin Guio")
