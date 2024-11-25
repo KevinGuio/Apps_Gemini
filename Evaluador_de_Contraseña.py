@@ -49,9 +49,6 @@ if submitted:
     resultados = evaluar_contrasena(contrasena)
     mostrar_resultados(resultados)
 
-# Mostrar botón para mostrar/ocultar la contraseña
-if contrasena:
-    if st.button("Mostrar Contraseña"):
-        st.text(contrasena)
+
 
 st.write("Programado por Kevin Guio")
