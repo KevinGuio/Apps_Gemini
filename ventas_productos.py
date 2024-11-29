@@ -9,75 +9,74 @@ def procesar_archivo_con_regex(contenido_csv):
     """
     Procesa el archivo CSV organizando nombres y correos en una sola fila.
     """
-    # Extraer todos los nombres únicos y correos
-    todos_nombres = set()
-    todos_correos = []
+    # Extraer todos los datos originales
     datos_originales = []
-
     for linea in contenido_csv.splitlines():
-        # Extraer nombres
+        # Extraer nombres completos
         nombres = re.findall(r"[A-Z][a-z]+ [A-Z][a-z]+", linea)
-        todos_nombres.update(nombres)
         
-        # Extraer correos
+        # Extraer correo
         correo = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", linea)
-        if correo:
-            todos_correos.append(correo.group())
+        correo = correo.group() if correo else "N/A"
         
-        # Guardar datos originales de la línea
-        datos_originales.append({
-            "linea": linea,
-            "nombres": nombres,
-            "correo": correo.group() if correo else "N/A"
-        })
-
-    # Intentar hacer coincidir nombres con correos
-    datos_procesados = []
-    nombres_utilizados = set()
-
-    for entrada in datos_originales:
-        # Extraer información común de la línea
-        codigo = re.search(r"\b\d{6}\b", entrada["linea"])
+        # Extraer información adicional
+        codigo = re.search(r"\b\d{6}\b", linea)
         codigo = codigo.group() if codigo else "N/A"
 
-        precio = re.search(r"\b\d+\.\d{1,2}\b", entrada["linea"])
+        precio = re.search(r"\b\d+\.\d{1,2}\b", linea)
         precio = precio.group() if precio else "N/A"
 
-        fecha = re.search(r"\b\d{2}/\d{2}/\d{2}\b", entrada["linea"])
+        fecha = re.search(r"\b\d{2}/\d{2}/\d{2}\b", linea)
         fecha = fecha.group() if fecha else "N/A"
 
-        telefono = re.search(r"\+\d{1,3} \d{9,10}", entrada["linea"])
+        telefono = re.search(r"\+\d{1,3} \d{9,10}", linea)
         telefono = telefono.group() if telefono else "N/A"
 
-        # Procesar correo
-        correo = entrada["correo"]
-        nombre_correo = correo.split('@')[0] if correo != "N/A" else None
+        datos_originales.append({
+            "nombres": nombres,
+            "correo": correo,
+            "codigo": codigo,
+            "precio": precio,
+            "fecha": fecha,
+            "telefono": telefono
+        })
 
-        # Buscar nombre coincidente
-        nombre_coincidente = None
-        for nombre in entrada["nombres"]:
-            # Comparar nombre con parte del correo
-            if nombre_correo and nombre.replace(' ', '').lower() == nombre_correo.lower():
-                nombre_coincidente = nombre
-                break
-
-        # Si no hay coincidencia, buscar un nombre no utilizado
-        if not nombre_coincidente:
-            for nombre in entrada["nombres"]:
-                if nombre not in nombres_utilizados:
-                    nombre_coincidente = nombre
+    # Mapear nombres a correos
+    mapeo_nombres = {}
+    for dato in datos_originales:
+        if dato["correo"] != "N/A":
+            nombre_correo = dato["correo"].split('@')[0].replace('.', '').lower()
+            for nombre in dato["nombres"]:
+                nombre_limpio = nombre.replace(' ', '').lower()
+                if nombre_limpio == nombre_correo:
+                    mapeo_nombres[nombre] = dato["correo"]
                     break
 
-        # Agregar datos si se encontró un nombre
-        if nombre_coincidente and nombre_coincidente not in nombres_utilizados:
-            nombres_utilizados.add(nombre_coincidente)
+    # Procesar datos finales
+    datos_procesados = []
+    nombres_usados = set()
+
+    for dato in datos_originales:
+        # Encontrar nombre que no se haya usado
+        nombre_candidato = None
+        for nombre in dato["nombres"]:
+            if nombre not in nombres_usados:
+                nombre_candidato = nombre
+                break
+
+        # Verificar si hay un mapeo de nombre a correo
+        correo_final = "N/A"
+        if nombre_candidato:
+            nombres_usados.add(nombre_candidato)
+            correo_final = mapeo_nombres.get(nombre_candidato, dato["correo"])
+
             datos_procesados.append({
-                "Código_producto": codigo,
-                "Precio_producto": precio,
-                "Fecha_compra": fecha,
-                "Nombre_cliente": nombre_coincidente,
-                "Correo_electrónico": correo,
-                "Número_telefono": telefono,
+                "Código_producto": dato["codigo"],
+                "Precio_producto": dato["precio"],
+                "Fecha_compra": dato["fecha"],
+                "Nombre_cliente": nombre_candidato,
+                "Correo_electrónico": correo_final,
+                "Número_telefono": dato["telefono"]
             })
 
     return pd.DataFrame(datos_procesados)
