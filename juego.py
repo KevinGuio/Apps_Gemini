@@ -25,8 +25,8 @@ def app():
     st.write("""
     **Instrucciones:**
     1. Se te dará un número secreto de 4 dígitos.
-    2. Tienes que adivinar el número secreto utilizando expresiones regulares.
-    3. Cada vez que intentes, el juego te dará pistas sobre el número.
+    2. Tienes que adivinar el número secreto utilizando.
+    3. Cada vez que intentes, el juego te dará pistas sobre el número, verde esta en la posición correcta, amarillo no esta en la posición correcta.
     4. Si el número que introduces es correcto, ganarás el juego.
     
     ¡Buena suerte!
