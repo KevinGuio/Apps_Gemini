@@ -94,14 +94,15 @@ def main():
         original_data = pd.DataFrame([row.split("\t") for row in contenido_csv])
 
         # Mostrar los datos originales
-        st.write("### Datos cargados (originales):")
+        st.write("### Datos cargados correctamente:")
         st.dataframe(original_data)
 
         # Procesar el archivo para reorganizar los datos
+        archivo_csv.seek(0)  # Resetear el cursor del archivo
         df_procesado = procesar_archivo(archivo_csv.read())
 
         # Mostrar los datos procesados
-        st.write("### Datos procesados:")
+        st.write("### Datos válidos procesados:")
         st.dataframe(df_procesado)
 
         # Generar archivo Excel
