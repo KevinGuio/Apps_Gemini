@@ -24,28 +24,50 @@ def procesar_archivo_con_regex(df_original):
 
         # Extraer código del producto (exactamente 6 dígitos)
         codigo = re.search(r"\b\d{6}\b", linea)
-        codigos.append(codigo.group() if codigo else "N/A")
+        if codigo:
+            codigos.append(codigo.group())
+        else:
+            codigos.append("N/A")
 
         # Extraer precio del producto (con punto decimal y hasta dos decimales)
         precio = re.search(r"\b\d+\.\d{1,2}\b", linea)
-        precios.append(precio.group() if precio else "N/A")
+        if precio:
+            precios.append(precio.group())
+        else:
+            precios.append("N/A")
 
         # Extraer fecha de compra (formato DD/MM/YY)
         fecha = re.search(r"\b\d{2}/\d{2}/\d{2}\b", linea)
-        fechas.append(fecha.group() if fecha else "N/A")
+        if fecha:
+            fechas.append(fecha.group())
+        else:
+            fechas.append("N/A")
 
         # Extraer correo electrónico
         correo = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", linea)
-        correos.append(correo.group() if correo else "N/A")
+        if correo:
+            correos.append(correo.group())
+        else:
+            correos.append("N/A")
 
         # Extraer número de teléfono (formato internacional + código de país)
         telefono = re.search(r"\+\d{1,3} \d{9,10}", linea)
-        telefonos.append(telefono.group() if telefono else "N/A")
+        if telefono:
+            telefonos.append(telefono.group())
+        else:
+            telefonos.append("N/A")
 
         # Extraer nombres de los clientes
         nombres = re.findall(r"[A-Z][a-z]+ [A-Z][a-z]+", linea)
-        clientes1.append(nombres[0] if len(nombres) > 0 else "N/A")
-        clientes2.append(nombres[1] if len(nombres) > 1 else "N/A")
+        if len(nombres) > 0:
+            clientes1.append(nombres[0])
+        else:
+            clientes1.append("N/A")
+
+        if len(nombres) > 1:
+            clientes2.append(nombres[1])
+        else:
+            clientes2.append("N/A")
 
     # Crear un DataFrame con los datos procesados
     df_procesado = pd.DataFrame({
