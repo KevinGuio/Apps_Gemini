@@ -7,19 +7,16 @@ import xlsxwriter
 
 def procesar_archivo_con_regex(contenido_csv):
     """
-    Procesa el archivo CSV organizando nombres y correos en una sola fila.
+    Procesa el archivo CSV moviendo nombres para coincidir con correos.
     """
-    # Extraer todos los datos originales
-    datos_originales = []
+    # Extraer todos los datos
+    datos = []
     for linea in contenido_csv.splitlines():
-        # Extraer nombres completos
+        # Extraer información de la línea
         nombres = re.findall(r"[A-Z][a-z]+ [A-Z][a-z]+", linea)
-        
-        # Extraer correo
         correo = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", linea)
         correo = correo.group() if correo else "N/A"
         
-        # Extraer información adicional
         codigo = re.search(r"\b\d{6}\b", linea)
         codigo = codigo.group() if codigo else "N/A"
 
@@ -32,7 +29,7 @@ def procesar_archivo_con_regex(contenido_csv):
         telefono = re.search(r"\+\d{1,3} \d{9,10}", linea)
         telefono = telefono.group() if telefono else "N/A"
 
-        datos_originales.append({
+        datos.append({
             "nombres": nombres,
             "correo": correo,
             "codigo": codigo,
@@ -42,40 +39,36 @@ def procesar_archivo_con_regex(contenido_csv):
         })
 
     # Mapear nombres a correos
-    mapeo_nombres = {}
-    for dato in datos_originales:
-        if dato["correo"] != "N/A":
-            nombre_correo = dato["correo"].split('@')[0].replace('.', '').lower()
-            for nombre in dato["nombres"]:
-                nombre_limpio = nombre.replace(' ', '').lower()
-                if nombre_limpio == nombre_correo:
-                    mapeo_nombres[nombre] = dato["correo"]
-                    break
-
-    # Procesar datos finales
     datos_procesados = []
     nombres_usados = set()
 
-    for dato in datos_originales:
-        # Encontrar nombre que no se haya usado
-        nombre_candidato = None
+    for dato in datos:
+        nombre_correo = dato["correo"].split('@')[0].replace('.', '').lower() if dato["correo"] != "N/A" else None
+        nombre_coincidente = None
+
+        # Buscar nombre que coincida con el correo
         for nombre in dato["nombres"]:
-            if nombre not in nombres_usados:
-                nombre_candidato = nombre
+            nombre_limpio = nombre.replace(' ', '').lower()
+            if nombre_limpio == nombre_correo and nombre not in nombres_usados:
+                nombre_coincidente = nombre
                 break
 
-        # Verificar si hay un mapeo de nombre a correo
-        correo_final = "N/A"
-        if nombre_candidato:
-            nombres_usados.add(nombre_candidato)
-            correo_final = mapeo_nombres.get(nombre_candidato, dato["correo"])
+        # Si no hay coincidencia, buscar un nombre no usado
+        if not nombre_coincidente:
+            for nombre in dato["nombres"]:
+                if nombre not in nombres_usados:
+                    nombre_coincidente = nombre
+                    break
 
+        # Agregar datos si se encontró un nombre
+        if nombre_coincidente:
+            nombres_usados.add(nombre_coincidente)
             datos_procesados.append({
                 "Código_producto": dato["codigo"],
                 "Precio_producto": dato["precio"],
                 "Fecha_compra": dato["fecha"],
-                "Nombre_cliente": nombre_candidato,
-                "Correo_electrónico": correo_final,
+                "Nombre_cliente": nombre_coincidente,
+                "Correo_electrónico": dato["correo"],
                 "Número_telefono": dato["telefono"]
             })
 
@@ -104,28 +97,22 @@ def app():
     """)
     st.write("Programado por **Kevin Guio**")
 
-    # Subir archivo
     archivo_subido = st.file_uploader("Sube un archivo CSV", type=["csv"])
 
     if archivo_subido is not None:
-        # Leer el contenido del archivo CSV
         contenido_csv = archivo_subido.read().decode("utf-8")
 
-        # Mostrar los datos originales cargados
         st.write("### Datos cargados originalmente:")
         original_data = [row.split(",") for row in contenido_csv.splitlines()]
         df_original = pd.DataFrame(original_data)
         st.dataframe(df_original)
 
-        # Procesar el archivo con regex
         st.write("### Datos procesados:")
         df_procesado = procesar_archivo_con_regex(contenido_csv)
         st.dataframe(df_procesado)
 
-        # Convertir el DataFrame a Excel para su descarga
         archivo_excel = convertir_df_a_excel(df_procesado)
 
-        # Botón de descarga
         st.download_button(
             label="Descargar archivo Excel",
             data=archivo_excel,
