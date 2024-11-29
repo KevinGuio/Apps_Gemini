@@ -2,92 +2,92 @@ import streamlit as st
 import re
 import random
 
-# Word lists
-word_categories = {
-    "Animals": ["elephant", "giraffe", "leopard", "penguin", "dolphin"],
-    "Countries": ["france", "brazil", "canada", "japan", "mexico"],
-    "Programming": ["python", "javascript", "golang", "kotlin", "swift"]
+# Listas de palabras
+categorias_palabras = {
+    "Animales": ["elefante", "jirafa", "leopardo", "pingüino", "delfín"],
+    "Países": ["francia", "brasil", "canada", "japon", "mexico"],
+    "Programación": ["python", "javascript", "golang", "kotlin", "swift"]
 }
 
-def generate_regex_challenge():
-    """Generate a regex challenge based on word characteristics."""
-    category = random.choice(list(word_categories.keys()))
-    words = word_categories[category]
-    target_word = random.choice(words)
+def generar_desafio_regex():
+    """Genera un desafío de regex basado en las características de las palabras."""
+    categoria = random.choice(list(categorias_palabras.keys()))
+    palabras = categorias_palabras[categoria]
+    palabra_objetivo = random.choice(palabras)
     
-    challenges = [
+    desafios = [
         {
-            "description": f"Find a word with exactly {len(target_word)} letters",
-            "regex": f"^.{{{len(target_word)}}}$"
+            "descripcion": f"Encuentra una palabra con exactamente {len(palabra_objetivo)} letras",
+            "regex": f"^.{{{len(palabra_objetivo)}}}$"
         },
         {
-            "description": f"Find a word starting with '{target_word[0]}'",
-            "regex": f"^{target_word[0]}.*"
+            "descripcion": f"Encuentra una palabra que comience con '{palabra_objetivo[0]}'",
+            "regex": f"^{palabra_objetivo[0]}.*"
         },
         {
-            "description": f"Find a word ending with '{target_word[-1]}'",
-            "regex": f".*{target_word[-1]}$"
+            "descripcion": f"Encuentra una palabra que termine con '{palabra_objetivo[-1]}'",
+            "regex": f".*{palabra_objetivo[-1]}$"
         },
         {
-            "description": f"Find a word containing '{target_word[1:-1]}'",
-            "regex": f".*{target_word[1:-1]}.*"
+            "descripcion": f"Encuentra una palabra que contenga '{palabra_objetivo[1:-1]}'",
+            "regex": f".*{palabra_objetivo[1:-1]}.*"
         }
     ]
     
-    challenge = random.choice(challenges)
+    desafio = random.choice(desafios)
     return {
-        "category": category,
-        "words": words,
-        "target_word": target_word,
-        "challenge": challenge
+        "categoria": categoria,
+        "palabras": palabras,
+        "palabra_objetivo": palabra_objetivo,
+        "desafio": desafio
     }
 
-def check_regex_match(regex, words):
-    """Check how many words match the given regex."""
-    matches = [word for word in words if re.match(regex, word)]
-    return matches
+def verificar_coincidencia_regex(regex, palabras):
+    """Verifica cuántas palabras coinciden con la expresión regular dada."""
+    coincidencias = [palabra for palabra in palabras if re.match(regex, palabra)]
+    return coincidencias
 
 def app():
-    st.title("🧩 Regex Word Guessing Game")
+    st.title("🧩 Juego de Adivinanza de Palabras con Regex")
     
-    # Initialize or retrieve game state
-    if 'game' not in st.session_state:
-        st.session_state.game = generate_regex_challenge()
-        st.session_state.attempts = 0
-        st.session_state.solved = False
+    # Inicializar o recuperar el estado del juego
+    if 'juego' not in st.session_state:
+        st.session_state.juego = generar_desafio_regex()
+        st.session_state.intentos = 0
+        st.session_state.resuelto = False
     
-    game = st.session_state.game
+    juego = st.session_state.juego
     
-    # Display challenge
-    st.write(f"Category: {game['category']}")
-    st.write(f"Challenge: {game['challenge']['description']}")
+    # Mostrar el desafío
+    st.write(f"Categoría: {juego['categoria']}")
+    st.write(f"Desafío: {juego['desafio']['descripcion']}")
     
-    # User input for regex
-    user_regex = st.text_input("Enter your Regex pattern:")
+    # Entrada del usuario para la expresión regular
+    usuario_regex = st.text_input("Ingresa tu patrón de Regex:")
     
-    if st.button("Check Regex"):
+    if st.button("Verificar Regex"):
         try:
-            matches = check_regex_match(user_regex, game['words'])
+            coincidencias = verificar_coincidencia_regex(usuario_regex, juego['palabras'])
             
-            if game['target_word'] in matches:
-                st.success(f"🎉 Congratulations! You found the target word: {game['target_word']}")
-                st.session_state.solved = True
+            if juego['palabra_objetivo'] in coincidencias:
+                st.success(f"🎉 ¡Felicidades! Encontraste la palabra objetivo: {juego['palabra_objetivo']}")
+                st.session_state.resuelto = True
             else:
-                st.warning(f"Not quite! Matches: {matches}")
+                st.warning(f"¡No es eso! Coincidencias: {coincidencias}")
             
-            st.session_state.attempts += 1
+            st.session_state.intentos += 1
         
         except re.error:
-            st.error("Invalid Regular Expression!")
+            st.error("¡Expresión regular inválida!")
     
-    if st.button("New Challenge"):
-        st.session_state.game = generate_regex_challenge()
-        st.session_state.attempts = 0
-        st.session_state.solved = False
+    if st.button("Nuevo Desafío"):
+        st.session_state.juego = generar_desafio_regex()
+        st.session_state.intentos = 0
+        st.session_state.resuelto = False
         st.experimental_rerun()
     
-    # Show stats
-    st.write(f"Attempts: {st.session_state.attempts}")
+    # Mostrar estadísticas
+    st.write(f"Intentos: {st.session_state.intentos}")
 
 if __name__ == "__main__":
     app()
