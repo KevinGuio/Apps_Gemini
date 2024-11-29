@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import re
 
+
 def procesar_archivo(archivo_csv):
     """
     Procesa el archivo CSV cargado para reorganizar los datos según el formato deseado.
@@ -11,85 +12,104 @@ def procesar_archivo(archivo_csv):
 
     Returns:
         pd.DataFrame: DataFrame con los datos reorganizados.
+
+    Example:
+        >>> procesar_archivo(archivo_csv)
+        pd.DataFrame
     """
     # Leer el archivo CSV como texto
-    data = archivo_csv.read().decode("utf-8").strip().split("\n")
-    
+    data = archivo_csv.decode("utf-8").strip().split("\n")
+
     # Regex para extraer los campos necesarios
-    pattern = r"(\S+@\S+)\s+(\d+\.\d+)\s+([\+\d\s]+)\s+(\d{2}/\d{2}/\d{2})\s+([\w\s]+)\s+(\d+)\s+([\w\s]+)"
-    
-    # Almacenar los datos en un DataFrame
+    pattern = (r"(\S+@\S+)\s+(\d+\.\d+)\s+([\+\d\s]+)\s+(\d{2}/\d{2}/\d{2})"
+               r"\s+([\w\s]+)\s+(\d+)\s+([\w\s]+)")
+
+    # Almacenar los datos en una lista
     rows = []
     for line in data:
         match = re.match(pattern, line)
         if match:
             rows.append(match.groups())
-    
+
     # Crear el DataFrame
     df = pd.DataFrame(
-        rows, 
+        rows,
         columns=[
             "Correo_electrónico", "Precio_producto", "Número_telefono",
-            "Fecha_compra", "Nombre_cliente1", "Código_producto", 
+            "Fecha_compra", "Nombre_cliente1", "Código_producto",
             "Nombre_cliente2"
         ]
     )
-    
+
     # Reorganizar las columnas
     df = df[[
-        "Código_producto", "Precio_producto", "Fecha_compra", 
-        "Nombre_cliente1", "Nombre_cliente2", "Correo_electrónico", 
+        "Código_producto", "Precio_producto", "Fecha_compra",
+        "Nombre_cliente1", "Nombre_cliente2", "Correo_electrónico",
         "Número_telefono"
     ]]
-    
+
     return df
 
-def guardar_excel(df, nombre_archivo):
+
+def guardar_excel(df):
     """
-    Guarda el DataFrame en un archivo Excel.
+    Guarda el DataFrame en un archivo Excel en memoria.
 
     Args:
         df (pd.DataFrame): DataFrame a guardar.
-        nombre_archivo (str): Nombre del archivo Excel.
+
+    Returns:
+        BytesIO: Archivo Excel generado.
+
+    Example:
+        >>> guardar_excel(df)
+        BytesIO
     """
-    with pd.ExcelWriter(nombre_archivo, engine="xlsxwriter") as writer:
+    from io import BytesIO
+
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
         df.to_excel(writer, index=False, sheet_name="Datos")
+    output.seek(0)
+    return output
+
 
 def main():
     """Función principal de la app."""
     st.title("Organizador de Datos - Kevin Guio")
-    
+
     st.write("""
     **Cómo usar:**
     - Sube un archivo CSV con los datos en el formato original.
     - El programa reorganizará los datos y generará un archivo Excel con el formato deseado.
     """)
-    
+
     # Subir archivo CSV
     archivo_csv = st.file_uploader("Sube un archivo CSV", type=["csv"])
-    
+
     if archivo_csv:
-        # Procesar archivo
-        df = procesar_archivo(archivo_csv)
-        
-        # Mostrar DataFrame en la app
+        # Leer y procesar el archivo
+        contenido_csv = archivo_csv.read()
+        df = procesar_archivo(contenido_csv)
+
+        # Mostrar el DataFrame en la app
         st.write("### Datos procesados:")
         st.dataframe(df)
-        
-        # Descargar archivo Excel
-        nombre_archivo = "datos_organizados.xls"
-        guardar_excel(df, nombre_archivo)
-        
-        with open(nombre_archivo, "rb") as file:
-            st.download_button(
-                label="Descargar archivo Excel",
-                data=file,
-                file_name=nombre_archivo,
-                mime="application/vnd.ms-excel"
-            )
-    
+
+        # Generar archivo Excel
+        archivo_excel = guardar_excel(df)
+
+        # Botón para descargar el archivo Excel
+        st.download_button(
+            label="Descargar archivo Excel",
+            data=archivo_excel,
+            file_name="datos_organizados.xls",
+            mime="application/vnd.ms-excel"
+        )
+
     # Mensaje final
     st.write("Programado por Kevin Guio")
+
 
 if __name__ == "__main__":
     main()
