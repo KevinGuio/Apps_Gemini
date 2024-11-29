@@ -46,6 +46,15 @@ def app():
                     st.write("Pista: El número es más corto que tu intento.")
                 elif len(regex) < len(st.session_state.numero_secreto):
                     st.write("Pista: El número es más largo que tu intento.")
+                
+                # Pistas adicionales para hacer el juego más fácil
+                if st.session_state.numero_secreto[0] == regex[0]:
+                    st.write("Pista: El primer dígito del número es correcto.")
+                if st.session_state.numero_secreto[-1] == regex[-1]:
+                    st.write("Pista: El último dígito del número es correcto.")
+                if regex.count(r"\d") == 4:
+                    st.write("Pista: Estás buscando un número de 4 dígitos.")
+                
         except re.error:
             st.error("¡Expresión regular inválida! Asegúrate de escribir una expresión válida.")
 
@@ -59,6 +68,10 @@ def app():
             st.session_state.numero_secreto = generar_numero_secreto()
             st.session_state.adivinada = False
             st.experimental_rerun()
+
+    # Créditos
+    st.write("---")
+    st.write("Programado por **Kevin Guio**")
 
 if __name__ == "__main__":
     app()
