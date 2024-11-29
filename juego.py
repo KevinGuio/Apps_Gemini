@@ -38,7 +38,7 @@ def comparar_numero(usuario, secreto):
     return "".join(pista)
 
 def app():
-    st.title("🔢 Adivina el Número Secreto con Regex 🔢")
+    st.title("🔢 Adivina el Número Secreto 🔢")
 
     # Instrucciones del juego
     st.write("""
@@ -59,7 +59,7 @@ def app():
         st.session_state.adivinada = False
 
     # Solicitar el patrón regex
-    regex = st.text_input("Escribe una expresión regular para adivinar el número secreto:")
+    regex = st.text_input("Escribe 4 números para adivinar el número secreto:")
 
     # Botón para comprobar el regex
     if st.button("Comprobar Regex"):
