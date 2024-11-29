@@ -24,30 +24,30 @@ def procesar_archivo_con_regex(contenido_csv):
 
     # Procesar cada línea del archivo CSV
     for linea in contenido_csv.splitlines():
+        # Extraer código del producto (exactamente 6 dígitos)
+        codigo = re.search(r"\b\d{6}\b", linea)
+        codigos.append(codigo.group() if codigo else "N/A")
+
+        # Extraer precio del producto (con punto decimal y hasta dos decimales)
+        precio = re.search(r"\b\d+\.\d{1,2}\b", linea)
+        precios.append(precio.group() if precio else "N/A")
+
+        # Extraer fecha de compra (formato DD/MM/YY)
+        fecha = re.search(r"\b\d{2}/\d{2}/\d{2}\b", linea)
+        fechas.append(fecha.group() if fecha else "N/A")
+
         # Extraer correo electrónico
         correo = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", linea)
         correos.append(correo.group() if correo else "N/A")
 
-        # Extraer precio del producto
-        precio = re.search(r"\b\d+(\.\d{1,2})?\b", linea)
-        precios.append(precio.group() if precio else "N/A")
-
-        # Extraer número de teléfono
+        # Extraer número de teléfono (formato internacional + código de país)
         telefono = re.search(r"\+\d{1,3} \d{9,10}", linea)
         telefonos.append(telefono.group() if telefono else "N/A")
-
-        # Extraer fecha de compra
-        fecha = re.search(r"\b\d{2}/\d{2}/\d{2}\b", linea)
-        fechas.append(fecha.group() if fecha else "N/A")
 
         # Extraer nombres de los clientes
         nombres = re.findall(r"[A-Z][a-z]+ [A-Z][a-z]+", linea)
         clientes1.append(nombres[0] if len(nombres) > 0 else "N/A")
         clientes2.append(nombres[1] if len(nombres) > 1 else "N/A")
-
-        # Extraer código del producto
-        codigo = re.search(r"\b\d+\b", linea)
-        codigos.append(codigo.group() if codigo else "N/A")
 
     # Crear un DataFrame con los datos procesados
     df = pd.DataFrame({
