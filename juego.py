@@ -65,9 +65,12 @@ def app():
     if st.button("Comprobar Regex"):
         st.session_state.intentos += 1
 
-        # Verificar si el patrón coincide con el número secreto
-        try:
-            if re.match(regex, st.session_state.numero_secreto):
+        # Verificar que el intento sea exactamente un número de 4 dígitos
+        if len(regex) != 4 or not regex.isdigit():
+            st.error("¡Debes ingresar un número de 4 dígitos!")
+        else:
+            # Verificar si el número ingresado es correcto
+            if regex == st.session_state.numero_secreto:
                 st.success(f"🎉 ¡Correcto! El número secreto es {st.session_state.numero_secreto}.")
                 st.session_state.adivinada = True
             else:
@@ -76,9 +79,6 @@ def app():
                 # Comparar el intento con el número secreto y mostrar pistas interactivas
                 pistas = comparar_numero(regex, st.session_state.numero_secreto)
                 st.markdown(f"**Pistas:** {pistas}", unsafe_allow_html=True)
-
-        except re.error:
-            st.error("¡Expresión regular inválida! Asegúrate de escribir una expresión válida.")
 
     # Mostrar el número de intentos
     st.write(f"Intentos realizados: {st.session_state.intentos}")
