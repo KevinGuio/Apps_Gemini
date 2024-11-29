@@ -10,27 +10,30 @@ def comparar_numero(usuario, secreto):
     """Compara el número del usuario con el número secreto y genera las pistas."""
     pista = [""] * len(usuario)  # Inicializamos la lista con valores vacíos para cada dígito del número
     usado_secreto = [False] * len(secreto)  # Para marcar qué dígitos ya han sido usados en el número secreto
+    usuario_usado = [False] * len(usuario)  # Para marcar qué dígitos del intento del usuario ya han sido verificados
 
     # Primero, se marca con verde los dígitos en la posición correcta
     for i, digito in enumerate(usuario):
         if digito == secreto[i]:
             pista[i] = f"<span style='color:green'>{digito}</span>"  # Número en la posición correcta (verde)
             usado_secreto[i] = True  # Marcamos el dígito como usado
+            usuario_usado[i] = True  # Marcamos el dígito como verificado
 
     # Luego, se marca con amarillo los números que están en la secuencia pero en la posición incorrecta
     for i, digito in enumerate(usuario):
         if digito != secreto[i] and digito in secreto:
             # Asegurarse de que el dígito no se haya marcado como usado anteriormente
             for j in range(len(secreto)):
-                if digito == secreto[j] and not usado_secreto[j]:
+                if digito == secreto[j] and not usado_secreto[j] and not usuario_usado[i]:
                     pista[i] = f"<span style='color:yellow'>{digito}</span>"  # Número en la secuencia pero en lugar incorrecto (amarillo)
                     usado_secreto[j] = True  # Marcamos ese dígito como usado
+                    usuario_usado[i] = True  # Marcamos el dígito del usuario como verificado
                     break
 
-    # Finalmente, los números que no están en la secuencia no se colorean
+    # Finalmente, los números que no están en la secuencia no se colorean (gris)
     for i, digito in enumerate(usuario):
-        if digito != secreto[i] and digito not in secreto and pista[i] == "":
-            pista[i] = f"<span>{digito}</span>"  # Número no está en la secuencia (sin color)
+        if pista[i] == "":  # Si no se ha asignado color, significa que el dígito no está ni en el lugar correcto ni en la secuencia
+            pista[i] = f"<span style='color:gray'>{digito}</span>"  # Número no está en la secuencia (gris)
 
     return "".join(pista)
 
@@ -42,7 +45,7 @@ def app():
     **Instrucciones:**
     1. Se te dará un número secreto de 4 dígitos.
     2. Tienes que adivinar el número secreto utilizando una expresión regular.
-    3. Cada vez que intentes, el juego te dará pistas sobre el número: verde indica que el número está en la posición correcta, amarillo indica que el número está en la secuencia pero no en la posición correcta.
+    3. Cada vez que intentes, el juego te dará pistas sobre el número: verde indica que el número está en la posición correcta, amarillo indica que el número está en la secuencia pero no en la posición correcta, y gris indica que el número no está en la secuencia.
     4. Si el número que introduces es correcto, ganarás el juego.
     
     ¡Buena suerte!
