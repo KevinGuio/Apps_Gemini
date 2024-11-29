@@ -1,93 +1,78 @@
 import streamlit as st
-import re
 import random
+import re
 
-# Listas de palabras
-categorias_palabras = {
-    "Animales": ["elefante", "jirafa", "leopardo", "pingüino", "delfín"],
-    "Países": ["francia", "brasil", "canada", "japon", "mexico"],
-    "Programación": ["python", "javascript", "golang", "kotlin", "swift"]
-}
+# Lista de palabras
+palabras = ["manzana", "jirafa", "elefante", "computadora", "flor", "abogado", "construccion"]
 
-def generar_desafio_regex():
-    """Genera un desafío de regex basado en las características de las palabras."""
-    categoria = random.choice(list(categorias_palabras.keys()))
-    palabras = categorias_palabras[categoria]
-    palabra_objetivo = random.choice(palabras)
+# Generar el desafío de regex
+def generar_desafio():
+    palabra = random.choice(palabras)
+    letra_oculta = random.choice(palabra)
     
-    desafios = [
-        {
-            "descripcion": f"Encuentra una palabra con exactamente {len(palabra_objetivo)} letras",
-            "regex": f"^.{{{len(palabra_objetivo)}}}$"
-        },
-        {
-            "descripcion": f"Encuentra una palabra que comience con '{palabra_objetivo[0]}'",
-            "regex": f"^{palabra_objetivo[0]}.*"
-        },
-        {
-            "descripcion": f"Encuentra una palabra que termine con '{palabra_objetivo[-1]}'",
-            "regex": f".*{palabra_objetivo[-1]}$"
-        },
-        {
-            "descripcion": f"Encuentra una palabra que contenga '{palabra_objetivo[1:-1]}'",
-            "regex": f".*{palabra_objetivo[1:-1]}.*"
-        }
-    ]
+    # Crear un patrón de la palabra con la letra oculta representada por "_"
+    patron_oculto = "".join([letra if letra == letra_oculta else "_" for letra in palabra])
     
-    desafio = random.choice(desafios)
-    return {
-        "categoria": categoria,
-        "palabras": palabras,
-        "palabra_objetivo": palabra_objetivo,
-        "desafio": desafio
-    }
-
-def verificar_coincidencia_regex(regex, palabras):
-    """Verifica cuántas palabras coinciden con la expresión regular dada."""
-    coincidencias = [palabra for palabra in palabras if re.match(regex, palabra)]
-    return coincidencias
+    # Desafío: adivinar la letra oculta
+    return patron_oculto, letra_oculta, palabra
 
 def app():
-    st.title("🧩 Juego de Adivinanza de Palabras con Regex")
+    st.title("🎉 Adivina la Letra Oculta con Regex 🎉")
     
-    # Inicializar o recuperar el estado del juego
-    if 'juego' not in st.session_state:
-        st.session_state.juego = generar_desafio_regex()
+    # Instrucciones del juego
+    st.write("""
+    **Instrucciones:**
+    1. Elige una palabra aleatoria que está parcialmente oculta.
+    2. El objetivo es adivinar la letra oculta en la palabra utilizando expresiones regulares (regex).
+    3. Escribe una expresión regular que coincida con la letra oculta de la palabra.
+    4. Si adivinas correctamente, se te notificará y podrás seguir con un nuevo desafío.
+    5. Cada intento cuenta, ¡así que asegúrate de probar diferentes expresiones regulares!
+    
+    ¡Buena suerte y diviértete aprendiendo Regex!
+    """)
+
+    # Inicializar estado del juego
+    if 'intentos' not in st.session_state:
         st.session_state.intentos = 0
-        st.session_state.resuelto = False
+        st.session_state.patron, st.session_state.letra_oculta, st.session_state.palabra = generar_desafio()
+        st.session_state.adivinada = False
     
-    juego = st.session_state.juego
+    # Mostrar patrón oculto
+    st.write(f"Patrón de palabra: {st.session_state.patron}")
     
-    # Mostrar el desafío
-    st.write(f"Categoría: {juego['categoria']}")
-    st.write(f"Desafío: {juego['desafio']['descripcion']}")
+    # Entrada del usuario para regex
+    regex = st.text_input("Escribe una expresión regular para adivinar la letra oculta:")
     
-    # Entrada del usuario para la expresión regular
-    usuario_regex = st.text_input("Ingresa tu patrón de Regex:")
-    
-    if st.button("Verificar Regex"):
+    # Verificar el regex
+    if st.button("Comprobar Regex"):
+        st.session_state.intentos += 1
         try:
-            coincidencias = verificar_coincidencia_regex(usuario_regex, juego['palabras'])
-            
-            if juego['palabra_objetivo'] in coincidencias:
-                st.success(f"🎉 ¡Felicidades! Encontraste la palabra objetivo: {juego['palabra_objetivo']}")
-                st.session_state.resuelto = True
+            # Intentamos hacer coincidir el regex con la letra oculta
+            if re.match(regex, st.session_state.letra_oculta):
+                st.success(f"¡Bien hecho! La letra '{st.session_state.letra_oculta}' es correcta.")
+                st.session_state.adivinada = True
             else:
-                st.warning(f"¡No es eso! Coincidencias: {coincidencias}")
-            
-            st.session_state.intentos += 1
+                st.warning("¡No es la letra correcta! Intenta de nuevo.")
         
         except re.error:
             st.error("¡Expresión regular inválida!")
     
-    if st.button("Nuevo Desafío"):
-        st.session_state.juego = generar_desafio_regex()
-        st.session_state.intentos = 0
-        st.session_state.resuelto = False
-        st.experimental_rerun()
-    
-    # Mostrar estadísticas
+    # Mostrar número de intentos
     st.write(f"Intentos: {st.session_state.intentos}")
+    
+    # Botón para iniciar un nuevo desafío
+    if st.button("Nuevo desafío"):
+        st.session_state.patron, st.session_state.letra_oculta, st.session_state.palabra = generar_desafio()
+        st.session_state.intentos = 0
+        st.session_state.adivinada = False
+        st.experimental_rerun()
+
+    # Mostrar la palabra completa al final del juego
+    if st.session_state.adivinada:
+        st.write(f"¡Has adivinado la letra oculta! La palabra completa es: {st.session_state.palabra}")
+    
+    # Crédito final
+    st.write("Esta app fue creada por **Kevin Guio**")
 
 if __name__ == "__main__":
     app()
