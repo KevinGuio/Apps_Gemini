@@ -89,16 +89,16 @@ def main():
     archivo_csv = st.file_uploader("Sube un archivo CSV", type=["csv"])
 
     if archivo_csv:
-        # Leer el archivo CSV cargado como DataFrame
-        contenido_csv = archivo_csv.read()
-        original_data = pd.read_csv(archivo_csv, header=None)
+        # Leer el archivo CSV cargado como texto
+        contenido_csv = archivo_csv.read().decode("utf-8").strip().split("\n")
+        original_data = pd.DataFrame([row.split("\t") for row in contenido_csv])
 
         # Mostrar los datos originales
         st.write("### Datos cargados (originales):")
         st.dataframe(original_data)
 
         # Procesar el archivo para reorganizar los datos
-        df_procesado = procesar_archivo(contenido_csv)
+        df_procesado = procesar_archivo(archivo_csv.read())
 
         # Mostrar los datos procesados
         st.write("### Datos procesados:")
