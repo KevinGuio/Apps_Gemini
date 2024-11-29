@@ -16,7 +16,7 @@ def procesar_archivo_con_regex(contenido_csv):
         pd.DataFrame: DataFrame con los datos procesados y organizados.
     """
     # Crear listas para almacenar los datos extraídos
-    codigos, precios, fechas, clientes1, clientes2, correos, telefonos = [], [], [], [], [], [], []
+    codigos, precios, fechas, nombres, correos, telefonos = [], [], [], [], [], []
 
     # Procesar cada línea del archivo CSV
     for linea in contenido_csv.splitlines():
@@ -32,26 +32,37 @@ def procesar_archivo_con_regex(contenido_csv):
         fecha = re.search(r"\b\d{2}/\d{2}/\d{2}\b", linea)
         fechas.append(fecha.group() if fecha else "N/A")
 
+        # Extraer nombres de los clientes (suponiendo que hay nombres de tipo "Nombre Apellido")
+        nombres_cliente = re.findall(r"[A-Z][a-z]+ [A-Z][a-z]+", linea)
+        nombres_cliente = ' '.join(nombres_cliente) if nombres_cliente else "N/A"
+        nombres.append(nombres_cliente)
+
         # Extraer correo electrónico
         correo = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", linea)
-        correos.append(correo.group() if correo else "N/A")
+        if correo:
+            # Validar que el nombre del correo coincida con el nombre del cliente
+            correo_usuario = correo.group().split('@')[0]
+            nombre_cliente = nombres_cliente.lower().replace(" ", "")
+            if correo_usuario.lower() == nombre_cliente:
+                correos.append(correo.group())
+            else:
+                correos.append("N/A")
+        else:
+            correos.append("N/A")
 
         # Extraer número de teléfono (formato internacional + código de país)
         telefono = re.search(r"\+\d{1,3} \d{9,10}", linea)
         telefonos.append(telefono.group() if telefono else "N/A")
 
-        # Extraer nombres de los clientes
-        nombres = re.findall(r"[A-Z][a-z]+ [A-Z][a-z]+", linea)
-        clientes1.append(nombres[0] if len(nombres) > 0 else "N/A")
-        clientes2.append(nombres[1] if len(nombres) > 1 else "N/A")
-
+    # Eliminar duplicados en los nombres (solo una columna de nombres)
+    nombres_unicos = list(set(nombres))
+    
     # Crear un DataFrame con los datos procesados
     df = pd.DataFrame({
         "Código_producto": codigos,
         "Precio_producto": precios,
         "Fecha_compra": fechas,
-        "Nombre_cliente1": clientes1,
-        "Nombre_cliente2": clientes2,
+        "Nombre_cliente": nombres_unicos,  # Usar solo una columna de nombres
         "Correo_electrónico": correos,
         "Número_telefono": telefonos,
     })
@@ -68,10 +79,6 @@ def convertir_df_a_excel(df):
 
     Returns:
         BytesIO: Flujo de datos en formato Excel.
-
-    Example:
-        >>> convertir_df_a_excel(mi_dataframe)
-        BytesIO con el contenido del archivo Excel.
     """
     output = BytesIO()
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
