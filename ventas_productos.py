@@ -95,18 +95,19 @@ def app():
     archivo_subido = st.file_uploader("Sube un archivo CSV", type=["csv"])
 
     if archivo_subido is not None:
-        # Leer el contenido del archivo CSV
-        contenido_csv = archivo_subido.read().decode("utf-8")
+        # Leer el contenido del archivo CSV y cargarlo en un DataFrame
+        try:
+            df_original = pd.read_csv(archivo_subido, delimiter=",", header=None)
+        except Exception as e:
+            st.error(f"Error al leer el archivo CSV: {e}")
+            return
 
         # Mostrar los datos originales cargados
         st.write("### Datos cargados originalmente:")
-        # Dividir las líneas del archivo por tabulación (\t)
-        original_data = [row.split("\t") for row in contenido_csv.splitlines()]
-        # Crear un DataFrame para visualizar los datos originales en columnas
-        df_original = pd.DataFrame(original_data)
         st.dataframe(df_original)
 
         # Procesar el archivo con regex
+        contenido_csv = archivo_subido.read().decode("utf-8")
         st.write("### Datos procesados:")
         df_procesado = procesar_archivo_con_regex(contenido_csv)
         st.dataframe(df_procesado)
