@@ -7,77 +7,69 @@ import xlsxwriter
 
 def procesar_archivo_con_regex(contenido_csv):
     """
-    Procesa el archivo CSV moviendo nombres para coincidir con correos.
+    Procesa el archivo CSV y organiza la información en columnas específicas.
+
+    Args:
+        contenido_csv (str): Contenido del archivo CSV cargado por el usuario.
+
+    Returns:
+        pd.DataFrame: DataFrame con los datos procesados y organizados.
     """
-    # Extraer todos los datos
-    datos = []
+    # Crear listas para almacenar los datos extraídos
+    codigos, precios, fechas, nombres, correos, telefonos = [], [], [], [], [], []
+
+    # Procesar cada línea del archivo CSV
     for linea in contenido_csv.splitlines():
-        # Extraer información de la línea
-        nombres = re.findall(r"[A-Z][a-z]+ [A-Z][a-z]+", linea)
-        correo = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", linea)
-        correo = correo.group() if correo else "N/A"
-        
+        # Extraer código del producto (exactamente 6 dígitos)
         codigo = re.search(r"\b\d{6}\b", linea)
-        codigo = codigo.group() if codigo else "N/A"
+        codigos.append(codigo.group() if codigo else "N/A")
 
+        # Extraer precio del producto (con punto decimal y hasta dos decimales)
         precio = re.search(r"\b\d+\.\d{1,2}\b", linea)
-        precio = precio.group() if precio else "N/A"
+        precios.append(precio.group() if precio else "N/A")
 
+        # Extraer fecha de compra (formato DD/MM/YY)
         fecha = re.search(r"\b\d{2}/\d{2}/\d{2}\b", linea)
-        fecha = fecha.group() if fecha else "N/A"
+        fechas.append(fecha.group() if fecha else "N/A")
 
+        # Extraer correo electrónico
+        correo = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", linea)
+        if correo:
+            correo_usuario = correo.group().split('@')[0]  # Extraer la parte antes del '@'
+            # Convertir el correo a formato de nombre (por ejemplo, PepitoPerez -> Pepito Perez)
+            nombre_cliente = re.sub(r'([a-z])([A-Z])', r'\1 \2', correo_usuario).title()  # Agregar espacio entre mayúsculas
+            nombres.append(nombre_cliente)
+            correos.append(correo.group())
+        else:
+            nombres.append("N/A")
+            correos.append("N/A")
+
+        # Extraer número de teléfono (formato internacional + código de país)
         telefono = re.search(r"\+\d{1,3} \d{9,10}", linea)
-        telefono = telefono.group() if telefono else "N/A"
+        telefonos.append(telefono.group() if telefono else "N/A")
 
-        datos.append({
-            "nombres": nombres,
-            "correo": correo,
-            "codigo": codigo,
-            "precio": precio,
-            "fecha": fecha,
-            "telefono": telefono
-        })
+    # Crear un DataFrame con los datos procesados
+    df = pd.DataFrame({
+        "Código_producto": codigos,
+        "Precio_producto": precios,
+        "Fecha_compra": fechas,
+        "Nombre_cliente": nombres,  # Agregar columna de nombres extraídos del correo
+        "Correo_electrónico": correos,
+        "Número_telefono": telefonos,
+    })
 
-    # Mapear nombres a correos
-    datos_procesados = []
-    nombres_usados = set()
-
-    for dato in datos:
-        nombre_correo = dato["correo"].split('@')[0].replace('.', '').lower() if dato["correo"] != "N/A" else None
-        nombre_coincidente = None
-
-        # Buscar nombre que coincida con el correo
-        for nombre in dato["nombres"]:
-            nombre_limpio = nombre.replace(' ', '').lower()
-            if nombre_limpio == nombre_correo and nombre not in nombres_usados:
-                nombre_coincidente = nombre
-                break
-
-        # Si no hay coincidencia, buscar un nombre no usado
-        if not nombre_coincidente:
-            for nombre in dato["nombres"]:
-                if nombre not in nombres_usados:
-                    nombre_coincidente = nombre
-                    break
-
-        # Agregar datos si se encontró un nombre
-        if nombre_coincidente:
-            nombres_usados.add(nombre_coincidente)
-            datos_procesados.append({
-                "Código_producto": dato["codigo"],
-                "Precio_producto": dato["precio"],
-                "Fecha_compra": dato["fecha"],
-                "Nombre_cliente": nombre_coincidente,
-                "Correo_electrónico": dato["correo"],
-                "Número_telefono": dato["telefono"]
-            })
-
-    return pd.DataFrame(datos_procesados)
+    return df
 
 
 def convertir_df_a_excel(df):
     """
     Convierte un DataFrame en un archivo Excel para su descarga.
+
+    Args:
+        df (pd.DataFrame): DataFrame con la información procesada.
+
+    Returns:
+        BytesIO: Flujo de datos en formato Excel.
     """
     output = BytesIO()
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
@@ -97,22 +89,30 @@ def app():
     """)
     st.write("Programado por **Kevin Guio**")
 
+    # Subir archivo
     archivo_subido = st.file_uploader("Sube un archivo CSV", type=["csv"])
 
     if archivo_subido is not None:
+        # Leer el contenido del archivo CSV
         contenido_csv = archivo_subido.read().decode("utf-8")
 
+        # Mostrar los datos originales cargados
         st.write("### Datos cargados originalmente:")
+        # Dividir las líneas del archivo por tabulación (\t)
         original_data = [row.split(",") for row in contenido_csv.splitlines()]
+        # Crear un DataFrame para visualizar los datos originales en columnas
         df_original = pd.DataFrame(original_data)
         st.dataframe(df_original)
 
+        # Procesar el archivo con regex
         st.write("### Datos procesados:")
         df_procesado = procesar_archivo_con_regex(contenido_csv)
         st.dataframe(df_procesado)
 
+        # Convertir el DataFrame a Excel para su descarga
         archivo_excel = convertir_df_a_excel(df_procesado)
 
+        # Botón de descarga
         st.download_button(
             label="Descargar archivo Excel",
             data=archivo_excel,
