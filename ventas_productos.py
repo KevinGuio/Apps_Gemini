@@ -7,55 +7,70 @@ import xlsxwriter
 
 def procesar_archivo_con_regex(contenido_csv):
     """
-    Procesa el archivo CSV y organiza la información en columnas específicas.
+    Procesa el archivo CSV organizando nombres y correos en una sola fila.
     """
-    datos_procesados = []
-    nombres_procesados = {}
+    # Extraer todos los nombres únicos y correos
+    todos_nombres = set()
+    todos_correos = []
+    datos_originales = []
 
     for linea in contenido_csv.splitlines():
-        # Extraer código del producto
-        codigo = re.search(r"\b\d{6}\b", linea)
+        # Extraer nombres
+        nombres = re.findall(r"[A-Z][a-z]+ [A-Z][a-z]+", linea)
+        todos_nombres.update(nombres)
+        
+        # Extraer correos
+        correo = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", linea)
+        if correo:
+            todos_correos.append(correo.group())
+        
+        # Guardar datos originales de la línea
+        datos_originales.append({
+            "linea": linea,
+            "nombres": nombres,
+            "correo": correo.group() if correo else "N/A"
+        })
+
+    # Intentar hacer coincidir nombres con correos
+    datos_procesados = []
+    nombres_utilizados = set()
+
+    for entrada in datos_originales:
+        # Extraer información común de la línea
+        codigo = re.search(r"\b\d{6}\b", entrada["linea"])
         codigo = codigo.group() if codigo else "N/A"
 
-        # Extraer precio del producto
-        precio = re.search(r"\b\d+\.\d{1,2}\b", linea)
+        precio = re.search(r"\b\d+\.\d{1,2}\b", entrada["linea"])
         precio = precio.group() if precio else "N/A"
 
-        # Extraer fecha de compra
-        fecha = re.search(r"\b\d{2}/\d{2}/\d{2}\b", linea)
+        fecha = re.search(r"\b\d{2}/\d{2}/\d{2}\b", entrada["linea"])
         fecha = fecha.group() if fecha else "N/A"
 
-        # Extraer correo electrónico
-        correo = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", linea)
-        correo = correo.group() if correo else "N/A"
-
-        # Extraer número de teléfono
-        telefono = re.search(r"\+\d{1,3} \d{9,10}", linea)
+        telefono = re.search(r"\+\d{1,3} \d{9,10}", entrada["linea"])
         telefono = telefono.group() if telefono else "N/A"
 
-        # Extraer nombres de los clientes
-        nombres = re.findall(r"[A-Z][a-z]+ [A-Z][a-z]+", linea)
-        
-        # Extraer nombre antes del @ del correo
+        # Procesar correo
+        correo = entrada["correo"]
         nombre_correo = correo.split('@')[0] if correo != "N/A" else None
 
-        # Encontrar nombre que coincida con el nombre del correo
+        # Buscar nombre coincidente
         nombre_coincidente = None
-        for nombre in nombres:
-            # Remover espacios y convertir a minúsculas para comparación
-            nombre_limpio = nombre.replace(' ', '').lower()
-            if nombre_correo and nombre_limpio == nombre_correo.lower():
+        for nombre in entrada["nombres"]:
+            # Comparar nombre con parte del correo
+            if nombre_correo and nombre.replace(' ', '').lower() == nombre_correo.lower():
                 nombre_coincidente = nombre
                 break
 
-        # Si no se encuentra coincidencia, tomar el primer nombre
-        if not nombre_coincidente and nombres:
-            nombre_coincidente = nombres[0]
+        # Si no hay coincidencia, buscar un nombre no utilizado
+        if not nombre_coincidente:
+            for nombre in entrada["nombres"]:
+                if nombre not in nombres_utilizados:
+                    nombre_coincidente = nombre
+                    break
 
-        # Verificar si el nombre ya ha sido procesado
-        if nombre_coincidente and nombre_coincidente not in nombres_procesados:
-            nombres_procesados[nombre_coincidente] = True
-            
+        # Agregar datos si se encontró un nombre
+        if nombre_coincidente and nombre_coincidente not in nombres_utilizados:
+            nombres_utilizados.add(nombre_coincidente)
             datos_procesados.append({
                 "Código_producto": codigo,
                 "Precio_producto": precio,
