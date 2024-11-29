@@ -1,124 +1,129 @@
 import streamlit as st
 import pandas as pd
 import re
+from io import BytesIO
+import xlsxwriter
 
 
-def procesar_archivo(archivo_csv):
+def procesar_archivo_con_regex(contenido_csv):
     """
-    Procesa el archivo CSV cargado para reorganizar los datos según el formato deseado.
+    Procesa el archivo CSV y organiza la información en columnas específicas.
 
     Args:
-        archivo_csv (file-like): Archivo CSV cargado por el usuario.
+        contenido_csv (str): Contenido del archivo CSV cargado por el usuario.
 
     Returns:
-        pd.DataFrame: DataFrame con los datos reorganizados.
+        pd.DataFrame: DataFrame con los datos procesados y organizados.
 
     Example:
-        >>> procesar_archivo(archivo_csv)
-        pd.DataFrame
+        >>> procesar_archivo_con_regex("contenido_csv")
+        DataFrame con columnas organizadas.
     """
-    # Leer el archivo CSV como texto
-    data = archivo_csv.decode("utf-8").strip().split("\n")
+    # Crear listas para almacenar los datos extraídos
+    codigos, precios, fechas, clientes1, clientes2, correos, telefonos = [], [], [], [], [], [], []
 
-    # Regex para extraer los campos necesarios
-    pattern = (r"(\S+@\S+)\s+(\d+\.\d+)\s+([\+\d\s]+)\s+(\d{2}/\d{2}/\d{2})"
-               r"\s+([\w\s]+)\s+(\d+)\s+([\w\s]+)")
+    # Procesar cada línea del archivo CSV
+    for linea in contenido_csv.splitlines():
+        # Extraer correo electrónico
+        correo = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", linea)
+        correos.append(correo.group() if correo else "N/A")
 
-    # Almacenar los datos en una lista
-    rows = []
-    for line in data:
-        match = re.match(pattern, line)
-        if match:
-            rows.append(match.groups())
+        # Extraer precio del producto
+        precio = re.search(r"\b\d+(\.\d{1,2})?\b", linea)
+        precios.append(precio.group() if precio else "N/A")
 
-    # Crear el DataFrame
-    df = pd.DataFrame(
-        rows,
-        columns=[
-            "Correo_electrónico", "Precio_producto", "Número_telefono",
-            "Fecha_compra", "Nombre_cliente1", "Código_producto",
-            "Nombre_cliente2"
-        ]
-    )
+        # Extraer número de teléfono
+        telefono = re.search(r"\+\d{1,3} \d{9,10}", linea)
+        telefonos.append(telefono.group() if telefono else "N/A")
 
-    # Reorganizar las columnas
-    df = df[[
-        "Código_producto", "Precio_producto", "Fecha_compra",
-        "Nombre_cliente1", "Nombre_cliente2", "Correo_electrónico",
-        "Número_telefono"
-    ]]
+        # Extraer fecha de compra
+        fecha = re.search(r"\b\d{2}/\d{2}/\d{2}\b", linea)
+        fechas.append(fecha.group() if fecha else "N/A")
+
+        # Extraer nombres de los clientes
+        nombres = re.findall(r"[A-Z][a-z]+ [A-Z][a-z]+", linea)
+        clientes1.append(nombres[0] if len(nombres) > 0 else "N/A")
+        clientes2.append(nombres[1] if len(nombres) > 1 else "N/A")
+
+        # Extraer código del producto
+        codigo = re.search(r"\b\d+\b", linea)
+        codigos.append(codigo.group() if codigo else "N/A")
+
+    # Crear un DataFrame con los datos procesados
+    df = pd.DataFrame({
+        "Código_producto": codigos,
+        "Precio_producto": precios,
+        "Fecha_compra": fechas,
+        "Nombre_cliente1": clientes1,
+        "Nombre_cliente2": clientes2,
+        "Correo_electrónico": correos,
+        "Número_telefono": telefonos,
+    })
 
     return df
 
 
-def guardar_excel(df):
+def convertir_df_a_excel(df):
     """
-    Guarda el DataFrame en un archivo Excel en memoria.
+    Convierte un DataFrame en un archivo Excel para su descarga.
 
     Args:
-        df (pd.DataFrame): DataFrame a guardar.
+        df (pd.DataFrame): DataFrame con la información procesada.
 
     Returns:
-        BytesIO: Archivo Excel generado.
+        BytesIO: Flujo de datos en formato Excel.
 
     Example:
-        >>> guardar_excel(df)
-        BytesIO
+        >>> convertir_df_a_excel(mi_dataframe)
+        BytesIO con el contenido del archivo Excel.
     """
-    from io import BytesIO
-
     output = BytesIO()
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-        df.to_excel(writer, index=False, sheet_name="Datos")
+        df.to_excel(writer, index=False, sheet_name="Productos")
     output.seek(0)
     return output
 
 
-def main():
-    """Función principal de la app."""
-    st.title("Organizador de Datos - Kevin Guio")
-
+def app():
+    """
+    Construye la interfaz principal de la aplicación en Streamlit.
+    """
+    st.title("Procesador de Información de Productos")
     st.write("""
-    **Cómo usar:**
-    - Sube un archivo CSV con los datos en el formato original.
-    - El programa mostrará primero los datos originales cargados.
-    - Luego reorganizará los datos y generará un archivo Excel con el formato deseado.
+        **Objetivo:** Cargar un archivo CSV con información de productos,
+        procesarlo usando regex, y generar un archivo Excel estructurado.
     """)
+    st.write("Programado por **Kevin Guio**")
 
-    # Subir archivo CSV
-    archivo_csv = st.file_uploader("Sube un archivo CSV", type=["csv"])
+    # Subir archivo
+    archivo_subido = st.file_uploader("Sube un archivo CSV", type=["csv"])
 
-    if archivo_csv:
-        # Leer el archivo CSV cargado como texto
-        contenido_csv = archivo_csv.read().decode("utf-8").strip().split("\n")
-        original_data = pd.DataFrame([row.split("\t") for row in contenido_csv])
+    if archivo_subido is not None:
+        # Leer el contenido del archivo CSV
+        contenido_csv = archivo_subido.read().decode("utf-8")
 
-        # Mostrar los datos originales
-        st.write("### Datos cargados correctamente:")
-        st.dataframe(original_data)
+        # Mostrar los datos originales cargados
+        st.write("### Datos cargados originalmente:")
+        original_data = [row.split("\t") for row in contenido_csv.splitlines()]
+        df_original = pd.DataFrame(original_data)
+        st.dataframe(df_original)
 
-        # Procesar el archivo para reorganizar los datos
-        archivo_csv.seek(0)  # Resetear el cursor del archivo
-        df_procesado = procesar_archivo(archivo_csv.read())
-
-        # Mostrar los datos procesados
-        st.write("### Datos válidos procesados:")
+        # Procesar el archivo con regex
+        st.write("### Datos procesados:")
+        df_procesado = procesar_archivo_con_regex(contenido_csv)
         st.dataframe(df_procesado)
 
-        # Generar archivo Excel
-        archivo_excel = guardar_excel(df_procesado)
+        # Convertir el DataFrame a Excel para su descarga
+        archivo_excel = convertir_df_a_excel(df_procesado)
 
-        # Botón para descargar el archivo Excel
+        # Botón de descarga
         st.download_button(
             label="Descargar archivo Excel",
             data=archivo_excel,
-            file_name="datos_organizados.xls",
-            mime="application/vnd.ms-excel"
+            file_name="productos_procesados.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
-
-    # Mensaje final
-    st.write("Programado por Kevin Guio")
 
 
 if __name__ == "__main__":
-    main()
+    app()
