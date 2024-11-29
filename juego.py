@@ -6,6 +6,18 @@ def generar_numero_secreto():
     """Genera un número secreto aleatorio de 4 dígitos."""
     return str(random.randint(1000, 9999))
 
+def comparar_numero(usuario, secreto):
+    """Compara el número del usuario con el número secreto y genera las pistas."""
+    pista = []
+    for i, digito in enumerate(usuario):
+        if digito == secreto[i]:
+            pista.append(f"<span style='color:green'>{digito}</span>")  # Número en la posición correcta (verde)
+        elif digito in secreto:
+            pista.append(f"<span style='color:yellow'>{digito}</span>")  # Número en la secuencia pero en el lugar incorrecto (amarillo)
+        else:
+            pista.append(f"<span>{digito}</span>")  # Número no está en la secuencia (sin color)
+    return "".join(pista)
+
 def app():
     st.title("🔢 Adivina el Número Secreto con Regex 🔢")
 
@@ -40,21 +52,11 @@ def app():
                 st.session_state.adivinada = True
             else:
                 st.warning(f"No es correcto. Intenta con otro patrón. Intentos: {st.session_state.intentos}")
-                
-                # Dar pistas basadas en la longitud o el valor del número
-                if len(regex) > len(st.session_state.numero_secreto):
-                    st.write("Pista: El número es más corto que tu intento.")
-                elif len(regex) < len(st.session_state.numero_secreto):
-                    st.write("Pista: El número es más largo que tu intento.")
-                
-                # Pistas adicionales para hacer el juego más fácil
-                if st.session_state.numero_secreto[0] == regex[0]:
-                    st.write("Pista: El primer dígito del número es correcto.")
-                if st.session_state.numero_secreto[-1] == regex[-1]:
-                    st.write("Pista: El último dígito del número es correcto.")
-                if regex.count(r"\d") == 4:
-                    st.write("Pista: Estás buscando un número de 4 dígitos.")
-                
+
+                # Comparar el intento con el número secreto y mostrar pistas interactivas
+                pistas = comparar_numero(regex, st.session_state.numero_secreto)
+                st.markdown(f"**Pistas:** {pistas}", unsafe_allow_html=True)
+
         except re.error:
             st.error("¡Expresión regular inválida! Asegúrate de escribir una expresión válida.")
 
