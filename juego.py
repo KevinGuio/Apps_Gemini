@@ -8,13 +8,13 @@ def generar_numero_secreto():
 
 def comparar_numero(usuario, secreto):
     """Compara el número del usuario con el número secreto y genera las pistas."""
-    pista = []
+    pista = [""] * len(usuario)  # Inicializamos la lista con valores vacíos para cada dígito del número
     usado_secreto = [False] * len(secreto)  # Para marcar qué dígitos ya han sido usados en el número secreto
 
     # Primero, se marca con verde los dígitos en la posición correcta
     for i, digito in enumerate(usuario):
         if digito == secreto[i]:
-            pista.append(f"<span style='color:green'>{digito}</span>")  # Número en la posición correcta (verde)
+            pista[i] = f"<span style='color:green'>{digito}</span>"  # Número en la posición correcta (verde)
             usado_secreto[i] = True  # Marcamos el dígito como usado
 
     # Luego, se marca con amarillo los números que están en la secuencia pero en la posición incorrecta
@@ -26,10 +26,6 @@ def comparar_numero(usuario, secreto):
                     pista[i] = f"<span style='color:yellow'>{digito}</span>"  # Número en la secuencia pero en lugar incorrecto (amarillo)
                     usado_secreto[j] = True  # Marcamos ese dígito como usado
                     break
-            else:
-                # Si no se puede marcar, es porque ya está en otro lugar
-                if pista[i] == "":
-                    pista.append(f"<span>{digito}</span>")  # Sin color
 
     # Finalmente, los números que no están en la secuencia no se colorean
     for i, digito in enumerate(usuario):
