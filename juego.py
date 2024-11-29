@@ -66,10 +66,11 @@ def app():
     # Si adivinó el número, permitir reiniciar el juego
     if st.session_state.adivinada:
         if st.button("Jugar de nuevo"):
+            # Restablecer las variables de estado para iniciar un nuevo juego
             st.session_state.intentos = 0
             st.session_state.numero_secreto = generar_numero_secreto()
             st.session_state.adivinada = False
-            st.experimental_rerun()
+            # No es necesario hacer rerun; solo se reinicia el estado del juego.
 
     # Créditos
     st.write("---")
