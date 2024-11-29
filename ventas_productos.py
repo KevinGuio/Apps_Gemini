@@ -16,56 +16,65 @@ def procesar_archivo_con_regex(contenido_csv):
         pd.DataFrame: DataFrame con los datos procesados y organizados.
     """
     # Crear listas para almacenar los datos extraídos
-    codigos, precios, fechas, nombres, correos, telefonos = [], [], [], [], [], []
+    datos_procesados = []
 
     # Procesar cada línea del archivo CSV
-    for linea in contenido_csv.splitlines():
+    lineas = contenido_csv.splitlines()
+    nombres_procesados = set()
+
+    for linea in lineas:
         # Extraer código del producto (exactamente 6 dígitos)
         codigo = re.search(r"\b\d{6}\b", linea)
-        codigos.append(codigo.group() if codigo else "N/A")
+        codigo = codigo.group() if codigo else "N/A"
 
         # Extraer precio del producto (con punto decimal y hasta dos decimales)
         precio = re.search(r"\b\d+\.\d{1,2}\b", linea)
-        precios.append(precio.group() if precio else "N/A")
+        precio = precio.group() if precio else "N/A"
 
         # Extraer fecha de compra (formato DD/MM/YY)
         fecha = re.search(r"\b\d{2}/\d{2}/\d{2}\b", linea)
-        fechas.append(fecha.group() if fecha else "N/A")
-
-        # Extraer nombres de los clientes (suponiendo que hay nombres de tipo "Nombre Apellido")
-        nombres_cliente = re.findall(r"[A-Z][a-z]+ [A-Z][a-z]+", linea)
-        nombres_cliente = ' '.join(nombres_cliente) if nombres_cliente else "N/A"
-        nombres.append(nombres_cliente)
+        fecha = fecha.group() if fecha else "N/A"
 
         # Extraer correo electrónico
         correo = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", linea)
-        if correo:
-            # Validar que el nombre del correo coincida con el nombre del cliente
-            correo_usuario = correo.group().split('@')[0]
-            nombre_cliente = nombres_cliente.lower().replace(" ", "")
-            if correo_usuario.lower() == nombre_cliente:
-                correos.append(correo.group())
-            else:
-                correos.append("N/A")
-        else:
-            correos.append("N/A")
+        correo = correo.group() if correo else "N/A"
 
         # Extraer número de teléfono (formato internacional + código de país)
         telefono = re.search(r"\+\d{1,3} \d{9,10}", linea)
-        telefonos.append(telefono.group() if telefono else "N/A")
+        telefono = telefono.group() if telefono else "N/A"
 
-    # Eliminar duplicados en los nombres (solo una columna de nombres)
-    nombres_unicos = list(set(nombres))
-    
+        # Extraer nombres de los clientes
+        nombres = re.findall(r"[A-Z][a-z]+ [A-Z][a-z]+", linea)
+        
+        # Filtrar nombres únicos
+        nombres_filtrados = [nombre for nombre in nombres if nombre not in nombres_procesados]
+        
+        # Si hay nombres disponibles y que no han sido procesados
+        if nombres_filtrados:
+            nombre_cliente1 = nombres_filtrados[0]
+            nombres_procesados.add(nombre_cliente1)
+            
+            # Buscar un segundo nombre si está disponible
+            nombre_cliente2 = nombres_filtrados[1] if len(nombres_filtrados) > 1 else "N/A"
+            if nombre_cliente2 != "N/A":
+                nombres_procesados.add(nombre_cliente2)
+        else:
+            nombre_cliente1 = "N/A"
+            nombre_cliente2 = "N/A"
+
+        # Agregar fila al conjunto de datos procesados
+        datos_procesados.append({
+            "Código_producto": codigo,
+            "Precio_producto": precio,
+            "Fecha_compra": fecha,
+            "Nombre_cliente1": nombre_cliente1,
+            "Nombre_cliente2": nombre_cliente2,
+            "Correo_electrónico": correo,
+            "Número_telefono": telefono,
+        })
+
     # Crear un DataFrame con los datos procesados
-    df = pd.DataFrame({
-        "Código_producto": codigos,
-        "Precio_producto": precios,
-        "Fecha_compra": fechas,
-        "Nombre_cliente": nombres_unicos,  # Usar solo una columna de nombres
-        "Correo_electrónico": correos,
-        "Número_telefono": telefonos,
-    })
+    df = pd.DataFrame(datos_procesados)
 
     return df
 
