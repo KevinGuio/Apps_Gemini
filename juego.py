@@ -43,10 +43,11 @@ def app():
     # Instrucciones del juego
     st.write("""
     **Instrucciones:**
-    1. Se te dará un número secreto de 4 dígitos.
-    2. Tienes que adivinar el número secreto utilizando una expresión regular.
-    3. Cada vez que intentes, el juego te dará pistas sobre el número: verde indica que el número está en la posición correcta, amarillo indica que el número está en la secuencia pero no en la posición correcta, y gris indica que el número no está en la secuencia.
+    1. Se te dará un número secreto de 4 dígitos que debes adivinar.
+    2. Cada vez que intentes, el juego te dará pistas sobre el número.
+    3. Verde indica que el número está en la posición correcta, amarillo indica que el número está en la secuencia pero no en la posición correcta, y gris indica que el número no está en la secuencia.
     4. Si el número que introduces es correcto, ganarás el juego.
+    5. Puedes volver a jugar despues de haber ganado dandole al boton "Jugar de nuevo".
     
     ¡Buena suerte!
     """)
