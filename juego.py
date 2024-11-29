@@ -23,17 +23,18 @@ def comparar_numero(usuario, secreto):
             # Asegurarse de que el dígito no se haya marcado como usado anteriormente
             for j in range(len(secreto)):
                 if digito == secreto[j] and not usado_secreto[j]:
-                    pista.append(f"<span style='color:yellow'>{digito}</span>")  # Número en la secuencia pero en lugar incorrecto (amarillo)
+                    pista[i] = f"<span style='color:yellow'>{digito}</span>"  # Número en la secuencia pero en lugar incorrecto (amarillo)
                     usado_secreto[j] = True  # Marcamos ese dígito como usado
                     break
             else:
                 # Si no se puede marcar, es porque ya está en otro lugar
-                pista.append(f"<span>{digito}</span>")  # Sin color
+                if pista[i] == "":
+                    pista.append(f"<span>{digito}</span>")  # Sin color
 
     # Finalmente, los números que no están en la secuencia no se colorean
     for i, digito in enumerate(usuario):
-        if digito != secreto[i] and digito not in secreto:
-            pista.append(f"<span>{digito}</span>")  # Número no está en la secuencia (sin color)
+        if digito != secreto[i] and digito not in secreto and pista[i] == "":
+            pista[i] = f"<span>{digito}</span>"  # Número no está en la secuencia (sin color)
 
     return "".join(pista)
 
