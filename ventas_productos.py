@@ -14,10 +14,6 @@ def procesar_archivo_con_regex(contenido_csv):
 
     Returns:
         pd.DataFrame: DataFrame con los datos procesados y organizados.
-
-    Example:
-        >>> procesar_archivo_con_regex("contenido_csv")
-        DataFrame con columnas organizadas.
     """
     # Crear listas para almacenar los datos extraídos
     codigos, precios, fechas, clientes1, clientes2, correos, telefonos = [], [], [], [], [], [], []
@@ -104,7 +100,9 @@ def app():
 
         # Mostrar los datos originales cargados
         st.write("### Datos cargados originalmente:")
+        # Dividir las líneas del archivo por tabulación (\t)
         original_data = [row.split("\t") for row in contenido_csv.splitlines()]
+        # Crear un DataFrame para visualizar los datos originales en columnas
         df_original = pd.DataFrame(original_data)
         st.dataframe(df_original)
 
