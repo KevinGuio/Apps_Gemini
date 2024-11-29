@@ -81,23 +81,31 @@ def main():
     st.write("""
     **Cómo usar:**
     - Sube un archivo CSV con los datos en el formato original.
-    - El programa reorganizará los datos y generará un archivo Excel con el formato deseado.
+    - El programa mostrará primero los datos originales cargados.
+    - Luego reorganizará los datos y generará un archivo Excel con el formato deseado.
     """)
 
     # Subir archivo CSV
     archivo_csv = st.file_uploader("Sube un archivo CSV", type=["csv"])
 
     if archivo_csv:
-        # Leer y procesar el archivo
+        # Leer el archivo CSV cargado como DataFrame
         contenido_csv = archivo_csv.read()
-        df = procesar_archivo(contenido_csv)
+        original_data = pd.read_csv(archivo_csv, header=None)
 
-        # Mostrar el DataFrame en la app
+        # Mostrar los datos originales
+        st.write("### Datos cargados (originales):")
+        st.dataframe(original_data)
+
+        # Procesar el archivo para reorganizar los datos
+        df_procesado = procesar_archivo(contenido_csv)
+
+        # Mostrar los datos procesados
         st.write("### Datos procesados:")
-        st.dataframe(df)
+        st.dataframe(df_procesado)
 
         # Generar archivo Excel
-        archivo_excel = guardar_excel(df)
+        archivo_excel = guardar_excel(df_procesado)
 
         # Botón para descargar el archivo Excel
         st.download_button(
