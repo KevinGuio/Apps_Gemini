@@ -9,13 +9,32 @@ def generar_numero_secreto():
 def comparar_numero(usuario, secreto):
     """Compara el número del usuario con el número secreto y genera las pistas."""
     pista = []
+    usado_secreto = [False] * len(secreto)  # Para marcar qué dígitos ya han sido usados en el número secreto
+
+    # Primero, se marca con verde los dígitos en la posición correcta
     for i, digito in enumerate(usuario):
         if digito == secreto[i]:
             pista.append(f"<span style='color:green'>{digito}</span>")  # Número en la posición correcta (verde)
-        elif digito in secreto:
-            pista.append(f"<span style='color:yellow'>{digito}</span>")  # Número en la secuencia pero en el lugar incorrecto (amarillo)
-        else:
+            usado_secreto[i] = True  # Marcamos el dígito como usado
+
+    # Luego, se marca con amarillo los números que están en la secuencia pero en la posición incorrecta
+    for i, digito in enumerate(usuario):
+        if digito != secreto[i] and digito in secreto:
+            # Asegurarse de que el dígito no se haya marcado como usado anteriormente
+            for j in range(len(secreto)):
+                if digito == secreto[j] and not usado_secreto[j]:
+                    pista.append(f"<span style='color:yellow'>{digito}</span>")  # Número en la secuencia pero en lugar incorrecto (amarillo)
+                    usado_secreto[j] = True  # Marcamos ese dígito como usado
+                    break
+            else:
+                # Si no se puede marcar, es porque ya está en otro lugar
+                pista.append(f"<span>{digito}</span>")  # Sin color
+
+    # Finalmente, los números que no están en la secuencia no se colorean
+    for i, digito in enumerate(usuario):
+        if digito != secreto[i] and digito not in secreto:
             pista.append(f"<span>{digito}</span>")  # Número no está en la secuencia (sin color)
+
     return "".join(pista)
 
 def app():
@@ -25,8 +44,8 @@ def app():
     st.write("""
     **Instrucciones:**
     1. Se te dará un número secreto de 4 dígitos.
-    2. Tienes que adivinar el número secreto utilizando.
-    3. Cada vez que intentes, el juego te dará pistas sobre el número, verde esta en la posición correcta, amarillo no esta en la posición correcta.
+    2. Tienes que adivinar el número secreto utilizando una expresión regular.
+    3. Cada vez que intentes, el juego te dará pistas sobre el número: verde indica que el número está en la posición correcta, amarillo indica que el número está en la secuencia pero no en la posición correcta.
     4. Si el número que introduces es correcto, ganarás el juego.
     
     ¡Buena suerte!
