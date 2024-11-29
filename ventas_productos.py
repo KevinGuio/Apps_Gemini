@@ -5,12 +5,12 @@ from io import BytesIO
 import xlsxwriter
 
 
-def procesar_archivo_con_regex(contenido_csv):
+def procesar_archivo_con_regex(df_original):
     """
     Procesa el archivo CSV y organiza la información en columnas específicas.
 
     Args:
-        contenido_csv (str): Contenido del archivo CSV cargado por el usuario.
+        df_original (pd.DataFrame): DataFrame con los datos cargados.
 
     Returns:
         pd.DataFrame: DataFrame con los datos procesados y organizados.
@@ -18,8 +18,10 @@ def procesar_archivo_con_regex(contenido_csv):
     # Crear listas para almacenar los datos extraídos
     codigos, precios, fechas, clientes1, clientes2, correos, telefonos = [], [], [], [], [], [], []
 
-    # Procesar cada línea del archivo CSV
-    for linea in contenido_csv.splitlines():
+    # Iterar sobre cada fila del DataFrame original
+    for index, row in df_original.iterrows():
+        linea = row[0]  # Suponemos que los datos están en una sola columna por línea
+
         # Extraer código del producto (exactamente 6 dígitos)
         codigo = re.search(r"\b\d{6}\b", linea)
         codigos.append(codigo.group() if codigo else "N/A")
@@ -46,7 +48,7 @@ def procesar_archivo_con_regex(contenido_csv):
         clientes2.append(nombres[1] if len(nombres) > 1 else "N/A")
 
     # Crear un DataFrame con los datos procesados
-    df = pd.DataFrame({
+    df_procesado = pd.DataFrame({
         "Código_producto": codigos,
         "Precio_producto": precios,
         "Fecha_compra": fechas,
@@ -56,7 +58,7 @@ def procesar_archivo_con_regex(contenido_csv):
         "Número_telefono": telefonos,
     })
 
-    return df
+    return df_procesado
 
 
 def convertir_df_a_excel(df):
@@ -68,10 +70,6 @@ def convertir_df_a_excel(df):
 
     Returns:
         BytesIO: Flujo de datos en formato Excel.
-
-    Example:
-        >>> convertir_df_a_excel(mi_dataframe)
-        BytesIO con el contenido del archivo Excel.
     """
     output = BytesIO()
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
@@ -107,9 +105,8 @@ def app():
         st.dataframe(df_original)
 
         # Procesar el archivo con regex
-        contenido_csv = archivo_subido.read().decode("utf-8")
+        df_procesado = procesar_archivo_con_regex(df_original)
         st.write("### Datos procesados:")
-        df_procesado = procesar_archivo_con_regex(contenido_csv)
         st.dataframe(df_procesado)
 
         # Convertir el DataFrame a Excel para su descarga
